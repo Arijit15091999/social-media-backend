@@ -75,32 +75,49 @@ async function followAndUnfollowUser(req, res) {
     const targetUserId = req.params.id;
     const loggedInUserId = req.user._id;
 
+    console.log(targetUserId, loggedInUserId);
+
     const targetUser = await User.findById(targetUserId);
     const loggedInUser = await User.findById(loggedInUserId);
 
-    const {index: index1, found} = searchUser(targetUser.followers, loggedInUserId);
-    
-    if(found) {
-      targetUser.splice(index1, 1);
-      await targetUser.save();
+    if(String(targetUser._id) === String(loggedInUser._id)) {
+      return res.status(400).send({success: false, message: "can not follow self"})
+    }
 
-      const {index: index2, found} = searchUser(loggedInUser.following, targetUserId);
+    const {index: index1, found: found1} = searchUser(loggedInUser.following, targetUserId);
+    // console.log(index1, found1);
 
-      loggedInUser.following.splice(index2, 1);
+    const {index: index2, found: found2} = searchUser(targetUser.followers, loggedInUserId);
+    // console.log(index2, found2);
+
+    if(found1) {
+      
+      loggedInUser.following.splice(index1, 1);
+      // console.log(loggedInUser.following)
+
+
+      targetUser.followers.splice(index2, 1);
+      // console.log(targetUser.followers);
 
       await loggedInUser.save();
+      await targetUser.save();
 
-      return res.status(200).send({success: true, message: "unfollowed"})
+      res.status(200).send({success: true, message: "unfollowed"})
     }
     else{
-      targetUser.followers.push(loggedInUserId);
-      loggedInUser.following.push(targetUserId);
+      targetUser.followers.push(loggedInUser._id);
+      loggedInUser.following.push(targetUser._id);
 
       await targetUser.save();
       await loggedInUser.save();
 
-      return res.status(200).send({success:true, message: "followed"})
+      res.status(200).send({success:true, message: "followed"})
     }
+
+    // console.log(targetUser.followers);
+    // console.log(loggedInUser.following);
+    // res.status(200).send({success:true, message: "followed"})
+
   } catch (error) {
     res.status(500).send({ success: false, message: error.message });
   }

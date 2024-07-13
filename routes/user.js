@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.route("/user/create").post(createUser);
 router.route("/user/login").post(login);
-router.route("/user/:id").get(isAuthenticated, followAndUnfollowUser)
+router.route("/user/follow/:id").get(isAuthenticated, followAndUnfollowUser)
 
 module.exports = router;
