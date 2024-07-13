@@ -70,6 +70,20 @@ async function login(req, res) {
   }
 }
 
+
+async function logout(req, res) {
+  try {
+
+    res.status(200).cookie("token", null, {
+      expires: new Date(Date.now()), httpOnly: true
+    }).json({success: true, message: "logged out"});
+    
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+}
+
+
 async function followAndUnfollowUser(req, res) {
   try {
     const targetUserId = req.params.id;
@@ -121,6 +135,35 @@ async function followAndUnfollowUser(req, res) {
   } catch (error) {
     res.status(500).send({ success: false, message: error.message });
   }
+  
 }
 
-module.exports = { createUser, login, followAndUnfollowUser };
+async function updatePassword(req, res) {
+  try {
+    const {oldPassword, newPassword} = req.body;
+    const user = await User.findById(req.user._id);
+
+    const isMatched = await user.matchPassword(oldPassword);
+
+    if(!isMatched) {
+      return res.status(400).send({success:false, message: "wrong password"});
+    }
+
+    const isSameAsOldOne = await user.matchPassword(newPassword);
+
+    if(!isSameAsOldOne) {
+      return res.status(400).send({success:false, message: "please provide a new password"});
+    }
+
+    user.password = newPassword;
+
+    await user.save();
+
+    res.status(200).send({success: true, message: "changed"})
+    
+  } catch (error) {
+    res.status(500).send({success: true, message: error.message})
+  }
+}
+
+module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword };

@@ -108,4 +108,23 @@ async function deletePost(req, res){
   }
 }
 
-module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser };
+async function getAllPosts(req, res) {
+
+  try{  
+    const user = await User.findById(req.user._id);
+
+    const posts = await Post.find({
+      owner : {$in : user.following},
+    });
+
+    res.status(200).send({
+      success: true,
+      posts : posts
+    })
+
+  }catch(error) {
+    res.status(500).send({success: false, message: error.message});
+  }
+}
+
+module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts };
