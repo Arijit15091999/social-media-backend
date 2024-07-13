@@ -35,7 +35,7 @@ async function likeAndUnlikePost(req, res) {
   try {
     const postId = req.params.id;
 
-    console.log(req.user._id);
+    // console.log(req.user._id);
 
     const post = await Post.findById({ _id: postId });
 
@@ -44,15 +44,19 @@ async function likeAndUnlikePost(req, res) {
         .status(404)
         .send({ success: false, message: "post not found" });
     }
-    const index = findUserInLikesArray(post.likes, req.user._id);
-    console.log(user);
-    
-    if (post.likes.includes(index != -1)) {
+    const {index, found} = searchUser(post.likes, req.user._id);
+    // console.log(post.likes);
+
+    if (found) {
       post.likes.splice(index, 1);
       await post.save();
+    // console.log(post.likes);
+
       return res.status(200).send({ success: true, message: "post unliked" });
     } else {
       post.likes.push(req.user._id);
+    // console.log(post.likes);
+
       await post.save();
       return res.status(200).send({ success: true, message: "post liked" });
     }
@@ -61,17 +65,18 @@ async function likeAndUnlikePost(req, res) {
   }
 }
 
-function findUserInLikesArray(array, userId) {
+
+function searchUser(array, userId) {
   let index = 0;
   for (let item of array) {
-    if(String(item) === String(userId)) {
-      return index;
+    if(String(item._id) === String(userId)) {
+      return {index, found: true};
     }
 
     index++;
   }
 
-  return -1;
+  return {index:-1, found: false};
 }
 
 async function deletePost(req, res){
@@ -103,4 +108,4 @@ async function deletePost(req, res){
   }
 }
 
-module.exports = { createPost, likeAndUnlikePost, deletePost };
+module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser };

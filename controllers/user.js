@@ -1,4 +1,5 @@
 const User = require("../models/user.js");
+const { searchUser } = require("./post.js");
 
 async function createUser(req, res) {
   try {
@@ -69,4 +70,40 @@ async function login(req, res) {
   }
 }
 
-module.exports = { createUser, login };
+async function followAndUnfollowUser(req, res) {
+  try {
+    const targetUserId = req.params.id;
+    const loggedInUserId = req.user._id;
+
+    const targetUser = await User.findById(targetUserId);
+    const loggedInUser = await User.findById(loggedInUserId);
+
+    const {index: index1, found} = searchUser(targetUser.followers, loggedInUserId);
+    
+    if(found) {
+      targetUser.splice(index1, 1);
+      await targetUser.save();
+
+      const {index: index2, found} = searchUser(loggedInUser.following, targetUserId);
+
+      loggedInUser.following.splice(index2, 1);
+
+      await loggedInUser.save();
+
+      return res.status(200).send({success: true, message: "unfollowed"})
+    }
+    else{
+      targetUser.followers.push(loggedInUserId);
+      loggedInUser.following.push(targetUserId);
+
+      await targetUser.save();
+      await loggedInUser.save();
+
+      return res.status(200).send({success:true, message: "followed"})
+    }
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+}
+
+module.exports = { createUser, login, followAndUnfollowUser };
