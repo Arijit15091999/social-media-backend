@@ -73,4 +73,29 @@ async function likeAndUnlikePost(req, res) {
 //   return -1;
 // }
 
-module.exports = { createPost, likeAndUnlikePost };
+async function deletePost(req, res){
+  try {
+    const postId = req.params.id;
+    
+    const post = await Post.findById({_id: postId});
+
+    if(!post){
+      res.status(404).send({message:"post not found"});
+    }
+
+    const ownderId = post.owner;
+
+    const user = await User.findById({_id:ownderId});
+
+    const index = user.posts.indexOf(postId);
+
+    user.posts.splice(index, 1);
+
+    await user.save();
+
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+}
+
+module.exports = { createPost, likeAndUnlikePost, deletePost };
