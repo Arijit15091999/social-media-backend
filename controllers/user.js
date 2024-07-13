@@ -4,6 +4,7 @@ async function createUser(req, res) {
   try {
     const { name, email, password } = req.body;
 
+
     const newUser = await User.create({
       name,
       email,
@@ -11,7 +12,7 @@ async function createUser(req, res) {
       avatar: { public_id: "sample_id", url: "sample_url" },
     });
 
-    const token = user.generateToken();
+    const token = newUser.generateToken();
 
     const tokenOptions = {
       expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),

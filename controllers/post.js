@@ -35,6 +35,8 @@ async function likeAndUnlikePost(req, res) {
   try {
     const postId = req.params.id;
 
+    console.log(req.user._id);
+
     const post = await Post.findById({ _id: postId });
 
     if (!post) {
@@ -42,10 +44,10 @@ async function likeAndUnlikePost(req, res) {
         .status(404)
         .send({ success: false, message: "post not found" });
     }
-    // const index = findUserInLikesArray(post.likes, req.user._id);
-
-    if (post.likes.includes(req.user._id)) {
-      const index = post.likes.indexOf(req.user._id);
+    const index = findUserInLikesArray(post.likes, req.user._id);
+    console.log(user);
+    
+    if (post.likes.includes(index != -1)) {
       post.likes.splice(index, 1);
       await post.save();
       return res.status(200).send({ success: true, message: "post unliked" });
@@ -59,19 +61,18 @@ async function likeAndUnlikePost(req, res) {
   }
 }
 
-// function findUserInLikesArray(arr, userId) {
-//   const array = [...arr];
-//   let index = 0;
-//   for (user of array) {
-//     if (user._id == userId) {
-//       console.log(user._id);
-//       return index;
-//     }
-//     index++;
-//   }
+function findUserInLikesArray(array, userId) {
+  let index = 0;
+  for (let item of array) {
+    if(String(item) === String(userId)) {
+      return index;
+    }
 
-//   return -1;
-// }
+    index++;
+  }
+
+  return -1;
+}
 
 async function deletePost(req, res){
   try {
@@ -86,6 +87,10 @@ async function deletePost(req, res){
     const ownderId = post.owner;
 
     const user = await User.findById({_id:ownderId});
+
+    if(!user){
+      res.status(404).send({message:"user not found"});
+    }
 
     const index = user.posts.indexOf(postId);
 
