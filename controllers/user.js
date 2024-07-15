@@ -143,6 +143,8 @@ async function updatePassword(req, res) {
     const {oldPassword, newPassword} = req.body;
     const user = await User.findById(req.user._id);
 
+    console.log(oldPassword, newPassword, user);
+
     const isMatched = await user.matchPassword(oldPassword);
 
     if(!isMatched) {
@@ -151,7 +153,7 @@ async function updatePassword(req, res) {
 
     const isSameAsOldOne = await user.matchPassword(newPassword);
 
-    if(!isSameAsOldOne) {
+    if(isSameAsOldOne) {
       return res.status(400).send({success:false, message: "please provide a new password"});
     }
 
@@ -159,11 +161,30 @@ async function updatePassword(req, res) {
 
     await user.save();
 
-    res.status(200).send({success: true, message: "changed"})
+    res.status(200).send({success: true, message: "password changed"})
     
   } catch (error) {
-    res.status(500).send({success: true, message: error.message})
+    res.status(500).send({success: false, message: error.message})
   }
 }
 
-module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword };
+async function updateProfile(req, res) {
+  try {
+    const{name, email} = req.body;
+    const user = await User.fineById(req.user._id);
+
+    if(name) user.name = name;
+
+    if(email) user.email = email;
+
+    //to fo avatar
+
+    await user.save();
+
+    res.status(200).send({success: true, message: "updated profile"})
+  } catch (error) {
+    res.status(500).send({success: false, message : error.message});
+  }
+}
+
+module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword, updateProfile };
