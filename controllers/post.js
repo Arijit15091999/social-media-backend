@@ -127,4 +127,27 @@ async function getAllPosts(req, res) {
   }
 }
 
-module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts };
+async function updateCaption(req, res) {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if(!post) {
+      return res.status(404).send({success: false, message: "post not found"});
+    }
+
+    if(String(post.owner) != String(req.user._id)) {
+      return res.status(401).send({success: false, message: "un authorized"});
+    }
+
+    post.caption = req.body.caption;
+
+    await post.save();
+
+    return res.status(200).send({success: true, message: "caption updated"});
+    
+  } catch (error) {
+    res.status(500).send({success: false, message: error.message});
+  }
+}
+
+module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts, updateCaption };

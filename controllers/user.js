@@ -143,8 +143,15 @@ async function updatePassword(req, res) {
     const {oldPassword, newPassword} = req.body;
     const user = await User.findById(req.user._id);
 
-    console.log(oldPassword, newPassword, user);
+    if(!oldPassword || !newPassword) {
+      return res.status(400).send({
+        success: false, 
+        message: "please provide old and new password"
+      });
+    }
 
+    console.log(oldPassword, newPassword, user);
+    
     const isMatched = await user.matchPassword(oldPassword);
 
     if(!isMatched) {
