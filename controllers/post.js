@@ -146,8 +146,46 @@ async function updateCaption(req, res) {
     return res.status(200).send({success: true, message: "caption updated"});
     
   } catch (error) {
+  }
+}
+
+async function commentOnPost(req, res) {
+  try {
+
+    const post = await Post.findById(req.params.id);
+
+    if(!post) {
+      return res.status(404).send({success: false, message: "post not found"});
+    }
+
+    let commentOfTheUserExist = false;
+
+    [...post.comments].forEach(async function(item) {
+      if(String(item.user) === String(req.user._id)) {
+        commentOfTheUserExist = true;
+        item.comment = req.body.comment;
+        return res.status(200).send({success: true, message: "comment Updated"});
+      }
+
+    });
+
+    if(!commentOfTheUserExist) {
+      post.comments.push({
+        user: req.user._id,
+        comment: req.body.comment
+      });
+    }
+
+    await post.save();
+
+    return res.status(200).send({success: true, message: "comment added"});
+
+    
+  } catch (error) {
     res.status(500).send({success: false, message: error.message});
   }
 }
 
-module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts, updateCaption };
+
+
+module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts, updateCaption, commentOnPost };
