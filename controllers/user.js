@@ -1,4 +1,5 @@
 const User = require("../models/user.js");
+const Post = require("../models/post.js");
 const { searchUser } = require("./post.js");
 
 async function createUser(req, res) {
@@ -194,4 +195,85 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword, updateProfile };
+
+async function deleteMyProfile(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    const posts = user.posts;
+    const userId = user._id;
+    const userFollowers = user.followers;
+
+
+    await user.remove();
+
+
+    //delete all posts by user
+    [...posts].forEach(async function(postId) {
+      const post = await Post.findById(postId);
+
+      await post.remove();
+    });
+
+    // delete the user from the follwers following
+    [...userFollowers].forEach(async function(followerId) {
+
+      const follower = await User.findById(followerId);
+
+      const following  = follower.following;
+
+      const {index, found} = searchUser(following, userId);
+
+
+      following.splice(index, 1);
+
+      follower.following = following;
+
+      await follower.save();
+    })
+    
+
+    //loging out user
+    res.cookie("token", null, {
+      expires: new Date(Date.now()), httpOnly: true
+    }).json({success: true, message: "profile deleted"});
+
+  } catch (error) {
+    res.status(500).send({success: false, message : error.message});
+  }
+}
+
+async function findMyProfile(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    return res.send(200).json({success: true, user});
+  } catch (error) {
+    res.status(500).send({success: false, message : error.message});
+  }
+}
+
+async function getUserProfile(req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if(!user) {
+      return res.status(404).send({success: false, message: "User not found"});
+    }
+    
+    return res.send(200).json({success: true, user});
+  } catch (error) {
+    res.status(500).send({success: false, message : error.message});
+  }
+}
+
+async function getAllUsers(req, res) {
+  try {
+    const users = await User.find({});
+    
+    return res.send(200).json({success: true, users});
+  } catch (error) {
+    res.status(500).send({success: false, message : error.message});
+  }
+}
+
+module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword, updateProfile, deleteMyProfile, findMyProfile, getUserProfile,  getAllUsers};
