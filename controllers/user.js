@@ -1,6 +1,7 @@
 const User = require("../models/user.js");
 const Post = require("../models/post.js");
 const { searchUser } = require("./post.js");
+const {sendEmail} = require("../middlewares/sendEmail.js");
 
 async function createUser(req, res) {
   try {
@@ -314,4 +315,50 @@ async function forgetPassword(req, res) {
   }
 }
 
-module.exports = { createUser, login, followAndUnfollowUser, logout, updatePassword, updateProfile, deleteMyProfile, findMyProfile, getUserProfile,  getAllUsers};
+async function resetPassword(req, res) {
+  try{
+
+    const resetPasswordToken = crypto.createHash("sha256")
+                                      .update(req.params.token)
+                                      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire : { $gt: Date.now() },
+    });
+
+    if(!user) {
+      return res.status(401)
+      .send({
+        success: false, 
+        message: "token is invalid or has expired"
+      });
+    }
+
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200)
+        .send({success: true, message:"password reset success"});
+
+  }catch(error) {
+    res.status(500).send({success: false, message: error.message});
+  }
+}
+
+module.exports = { 
+    resetPassword ,
+    forgetPassword ,
+    createUser,
+    login,
+    followAndUnfollowUser,
+    logout,
+    updatePassword,
+    updateProfile,
+    deleteMyProfile,
+    findMyProfile,
+    getUserProfile,
+    getAllUsers
+};
