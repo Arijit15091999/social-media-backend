@@ -186,6 +186,48 @@ async function commentOnPost(req, res) {
   }
 }
 
+async function deleteComment(req, res) {
+  try {
+    const post = await Post.findById(req.params.id);
 
+    if(!post){
+      return res.status(404).send({
+        message: "post not found"
+      });
+    }
 
-module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts, updateCaption, commentOnPost };
+    // if the commnet was made by you
+    if(post.owner.toString() === req.user._id.toString()) {
+      [...post.comments].forEach(async function(item, index) {
+        if(String(item._id) === String(req.body.commentId)) {
+          return post.comment.splice(index, 1);
+        }
+  
+      });
+    
+    await post.save();
+
+    return res.status(200).send({success: true, message: "selected comment deleted"});
+
+    }else{
+      // if the commnet was made by some other user
+
+      [...post.comments].forEach(async function(item, index) {
+        if(String(item.user) === String(req.user._id)) {
+          return post.comment.splice(index, 1);
+        }
+  
+      });
+
+      await post.save();
+
+      return res.status(200).send({success: true, message: "comment deleted"});
+
+    }
+    
+  } catch (error) {
+    res.status(500).send({success: false, message: error.message});
+  }
+}
+
+module.exports = { createPost, likeAndUnlikePost, deletePost, searchUser, getAllPosts, updateCaption, commentOnPost, deleteComment };
